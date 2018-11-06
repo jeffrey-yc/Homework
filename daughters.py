@@ -1,3 +1,8 @@
+'''
+## 馮文龍 2018/11/06
+## License MIT
+'''
+
 import numpy as np
 import sys
 
