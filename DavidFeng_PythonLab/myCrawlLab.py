@@ -27,6 +27,7 @@ class MyHTMLParser(HTMLParser):
     director_focus = False
     website_focus = False
     actors_focus = False
+    intro_focus = False
     __title_en = ''
     __title_zh = ''
     __categories = ''
@@ -76,6 +77,8 @@ class MyHTMLParser(HTMLParser):
                     else:
                         self.director_focus = False
                         self.actors_focus = True
+                elif attr[0] == 'class' and attr[1] == 'gray_infobox storeinfo':
+                    self.intro_focus = True
 
         if self.movie_info_focus:
             if tag == 'h1':
@@ -97,6 +100,8 @@ class MyHTMLParser(HTMLParser):
         elif self.english_title_data_focus:
             if tag == 'h3':
                 self.english_title_data_focus = False
+        elif self.intro_focus and tag == 'span':
+            self.intro_focus = False
 
     def handle_data(self, data):
         if data.strip() == '、':
@@ -110,24 +115,26 @@ class MyHTMLParser(HTMLParser):
             self.__categories = self.__categories + data.strip() + ' '
         elif self.director_focus and data.strip() != '':
             if data.strip() == '演員：':
-                self.__info['演員：'] = '';
+                self.__info['演員'] = '';
             else:
                 self.__info['導演'] = data.strip()
         elif self.actors_focus and data.strip() != '':
             if data.strip() == '官方連結：':
-                self.__info['官方連結：'] = ''
+                self.__info['官方連結'] = ''
                 self.actors_focus = False
                 self.website_focus = True
             else:
-                self.__info['演員：'] = self.__info['演員：'] + data.strip() + ','
+                self.__info['演員'] = self.__info['演員'] + data.strip() + ','
         elif self.website_focus and data.strip() != '':
-            self.__info['官方連結：'] = data.strip()
-            self.__info['演員：'] = self.__info['演員：'][:-1] # remove the trailing ','
+            self.__info['官方連結'] = data.strip()
+            self.__info['演員'] = self.__info['演員'][:-1] # remove the trailing ','
             self.website_focus = False
         elif self.movie_info_focus and data.strip() != '':
             dict_item = data.split('：')
             if dict_item[0] != 'IMDb分數':
                 self.__info[dict_item[0]] = dict_item[1]
+        elif self.intro_focus and data.strip() != '':
+            self.__intro = data.strip()
 
     def handle_decl(self, data):
         pass
@@ -168,6 +175,8 @@ if is_allowed:
     for item in parser.info:
         print(item, ':', parser.info[item])
         f.write(item + ':' + parser.info[item]+"\n")
+    print('劇情介紹:', parser.intro)
+    f.write('劇情介紹:' + parser.intro+"\n")
     f.close()
 else:
     print("網頁不允許訪問")
